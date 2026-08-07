@@ -1,0 +1,4 @@
+interface:
+  display_name: "HTML Email"
+  short_description: "Build robust responsive HTML emails"
+  default_prompt: "Use $email-html to build a responsive, accessible HTML email with a matching text version."

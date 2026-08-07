@@ -1,0 +1,4 @@
+interface:
+  display_name: "Git and Pull Requests"
+  short_description: "Prepare safe Git commits and pull requests"
+  default_prompt: "Use $git-pr to safely prepare this change for commit, push, or pull request."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Diagrams"
+  short_description: "Create clear architecture and process diagrams"
+  default_prompt: "Use $diagrams to create the smallest clear diagram for this system or process."

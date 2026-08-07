@@ -1,0 +1,4 @@
+interface:
+  display_name: "Automated Testing"
+  short_description: "Design reliable automated tests"
+  default_prompt: "Use $testing to add focused, deterministic tests that match this repository."

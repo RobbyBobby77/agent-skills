@@ -1,0 +1,4 @@
+interface:
+  display_name: "PowerPoint Presentations"
+  short_description: "Create and QA polished PowerPoint presentations"
+  default_prompt: "Use $pptx to create or edit this presentation and visually QA every slide."

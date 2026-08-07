@@ -1,0 +1,4 @@
+interface:
+  display_name: "Data Analysis"
+  short_description: "Metrics, EDA, charts, and trustworthy experiment readouts"
+  default_prompt: "Use $data-analysis to define metrics, analyze this data rigorously, and report findings with n, filters, and limitations."

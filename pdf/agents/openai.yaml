@@ -1,0 +1,4 @@
+interface:
+  display_name: "PDF Documents"
+  short_description: "Read, create, and transform PDF documents"
+  default_prompt: "Use $pdf to inspect, create, or transform this PDF and verify the rendered result."

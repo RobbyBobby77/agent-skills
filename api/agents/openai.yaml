@@ -1,0 +1,4 @@
+interface:
+  display_name: "HTTP APIs"
+  short_description: "Design and implement reliable HTTP APIs"
+  default_prompt: "Use $api to design or implement a clear, compatible HTTP API contract."

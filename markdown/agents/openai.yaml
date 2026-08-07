@@ -1,0 +1,4 @@
+interface:
+  display_name: "Markdown"
+  short_description: "Write clear maintainable Markdown documentation"
+  default_prompt: "Use $markdown to write or improve this documentation for its target renderer."

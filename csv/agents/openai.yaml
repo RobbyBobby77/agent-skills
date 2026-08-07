@@ -1,0 +1,4 @@
+interface:
+  display_name: "CSV and TSV"
+  short_description: "Inspect, clean, validate, and hand off flat-file data"
+  default_prompt: "Use $csv to safely inspect, clean, validate, and prepare this flat-file dataset for analysis."

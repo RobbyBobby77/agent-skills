@@ -1,0 +1,4 @@
+interface:
+  display_name: "Calendar Files"
+  short_description: "Create timezone-correct calendar files"
+  default_prompt: "Use $ics to create or inspect a timezone-correct iCalendar file for this event."
