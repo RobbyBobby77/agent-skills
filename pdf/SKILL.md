@@ -261,13 +261,15 @@ Paragraph("H<sub>2</sub>O and E = mc<super>2</super>", styles["Body"])
 Preserve aspect ratio:
 
 ```python
+from reportlab.lib.pagesizes import letter
 from reportlab.lib.utils import ImageReader
 from reportlab.platypus import Image
 
 # Platypus
 img = Image("chart.png", width=5 * inch, height=2.8 * inch, hAlign="CENTER")
 
-# Canvas
+# Canvas (reuses the `c` from Canvas essentials, above)
+_, page_h = letter
 ir = ImageReader("chart.png")
 iw, ih = ir.getSize()
 w = 5 * inch

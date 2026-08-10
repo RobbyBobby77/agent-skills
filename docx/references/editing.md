@@ -111,12 +111,12 @@ They live in separate parts (`word/header1.xml`, `word/footer1.xml`). Always pro
 
 Minimal edits only — mark the changed span, not the whole sentence.
 
-Accept all changes via LibreOffice when you need a clean final:
-
-```bash
-soffice --headless --accept="TrackChanges:AcceptAll" --convert-to docx input.docx
-# or python-docx / specialized accept script if available
-```
+To accept all changes for a clean final: `soffice --convert-to` has no plain flag for this — LibreOffice
+only exposes it through a macro (Basic `ThisComponent.acceptAllTrackedChanges()`, run headless via
+`soffice --headless "vnd.sun.star.script:..."`) or the Word/UNO automation API. Simpler and dependency-free:
+apply the same accept semantics directly at the XML level, since it's just the inverse of the tags above —
+unwrap each `<w:ins>` (keep its child runs, drop the wrapper) and delete each `<w:del>` entirely
+(including its `<w:delText>` runs). Use a specialized accept script if one is available in the environment.
 
 ### Comments
 

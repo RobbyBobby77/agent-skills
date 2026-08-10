@@ -132,7 +132,7 @@ async function iconPng(Icon, color = "#38BDF8", size = 256) {
     React.createElement(Icon, { color, size: String(size) })
   );
   const buf = await sharp(Buffer.from(svg)).png().toBuffer();
-  return "image/png;base64," + buf.toString("base64");
+  return "data:image/png;base64," + buf.toString("base64");
 }
 
 const icon = await iconPng(FaRocket);

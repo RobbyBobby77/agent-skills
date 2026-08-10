@@ -109,10 +109,13 @@ ev.add("summary", "Company holiday")
 ## Recurrence
 
 ```python
-ev.add("rrule", {"freq": "weekly", "byday": "mo,we", "count": 10})
+ev.add("rrule", {"freq": "weekly", "byday": ["MO", "WE"], "count": 10})
 # or until:
 # ev.add("rrule", {"freq": "monthly", "bymonthday": 1, "until": datetime(...)})
 ```
+
+Multi-value RRULE parts (like `byday`) take a **list**, and RFC 5545 weekday tokens are the fixed
+uppercase codes `MO`/`TU`/`WE`/`TH`/`FR`/`SA`/`SU` — don't pass a lowercase joined string.
 
 ## Update / cancel
 

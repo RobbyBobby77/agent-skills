@@ -135,8 +135,7 @@ counts = (
       .unstack(fill_value=0)
 )
 # rates: divide each row by that cohort's size at month 0
-cohort_size = counts.values.diagonal() if counts.shape[0] == counts.shape[1] else counts.max(axis=1)
-# safer: first column with activity for each cohort
+# (first column with activity for each cohort — safer than assuming the diagonal)
 sizes = counts.replace(0, pd.NA).bfill(axis=1).iloc[:, 0]
 retention = counts.div(sizes, axis=0)
 ```
