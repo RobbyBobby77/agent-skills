@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate SKILL.md frontmatter, references, and agents/openai.yaml
+        run: python3 scripts/validate_skills.py
+
+      - name: Check install.sh syntax
+        run: bash -n install.sh
+
+      - name: Check for whitespace errors
+        run: git diff --check "$(git hash-object -t tree /dev/null)" HEAD

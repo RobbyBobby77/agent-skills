@@ -11,6 +11,7 @@
   <img alt="SKILL.md format" src="https://img.shields.io/badge/format-SKILL.md-17324D?style=flat-square">
   <img alt="Curated collection" src="https://img.shields.io/badge/status-curated-D49A32?style=flat-square">
   <img alt="Portable" src="https://img.shields.io/badge/agents-portable-56697C?style=flat-square">
+  <img alt="MIT licensed" src="https://img.shields.io/badge/license-MIT-2F6B45?style=flat-square">
 </p>
 
 Agent Skills turns general-purpose coding agents into more dependable specialists. Each skill combines
@@ -150,6 +151,10 @@ python -m pip install openpyxl xlsxwriter pandas polars pypdf pdfplumber \
 ```
 
 </details>
+
+## License
+
+[MIT License](LICENSE) — free to use, copy, modify, and share with attribution of the license text.
 
 ## Contributing
 

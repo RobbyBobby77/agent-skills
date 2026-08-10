@@ -140,6 +140,8 @@ Match the HTML content; don't leave "please view HTML" as the only body.
 4. Send test to Gmail, Outlook.com, Apple Mail if possible
 5. Tools: Litmus, Email on Acid, or free Mailtrap previews
 
+Run the full pre-send list in [references/checklist.md](references/checklist.md) before delivery.
+
 ## Pitfalls
 
 - Outlook + padding on `<div>` / `<p>` — pad `<td>` instead
