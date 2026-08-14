@@ -5,7 +5,7 @@ Agents routinely stamp overlay text at the pixel coordinate they measured
 and miss the field by a flipped Y-axis.
 
 Usage:
-  python pdf/scripts/coords.py --x 120 --y 80 --dpi 150 --page-height-pt 792
+  python scripts/coords.py --x 120 --y 80 --dpi 150 --page-height-pt 792
 """
 
 from __future__ import annotations

@@ -12,6 +12,13 @@ description: >
 
 # Git & Pull Requests
 
+## Related skills
+
+| Need | Skill |
+|------|-------|
+| Tests to run before packaging | `testing` |
+| PR / commit prose | `markdown` |
+
 ## Operating rules
 
 - **Never** force-push `main`/`master`/`trunk`

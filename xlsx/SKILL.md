@@ -238,8 +238,8 @@ More patterns: [references/formulas.md](references/formulas.md), [references/for
 `xlsx → xlsx` often keeps stale cached values (a `SUM` stays `0`). Round-trip through Calc's native format:
 
 ```bash
-python xlsx/scripts/soffice.py --convert-to ods --outdir tmp output.xlsx
-python xlsx/scripts/soffice.py --convert-to xlsx --outdir recalculated tmp/output.ods
+python scripts/soffice.py --convert-to ods --outdir tmp output.xlsx
+python scripts/soffice.py --convert-to xlsx --outdir recalculated tmp/output.ods
 # or open and save once in Excel; verify the converted output before replacing anything
 ```
 
@@ -288,7 +288,7 @@ Keep a recoverable backup for replacement workflows unless the user explicitly d
 ## QA checklist
 
 ```bash
-python xlsx/scripts/qa_workbook.py output.xlsx
+python scripts/qa_workbook.py output.xlsx
 ```
 
 - [ ] Headers frozen, filter on

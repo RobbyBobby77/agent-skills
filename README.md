@@ -20,8 +20,9 @@ reference material. The collection covers document production, data work, and en
 without tying the source to one agent runtime.
 
 > [!NOTE]
-> Skills are instructions, not dependency bundles. Install format-specific libraries and system tools
-> only when a task needs them.
+> Skills are instructions, not dependency bundles. Optional `scripts/` helpers are stdlib Python so
+> they work after `install.sh` without extra packages. Install format-specific libraries and system
+> tools only when a task needs them.
 
 ## Why this collection
 
@@ -93,7 +94,8 @@ skill-name/
 ├── SKILL.md               # trigger metadata + core operating workflow
 ├── agents/
 │   └── openai.yaml        # user-facing catalog metadata
-└── references/            # optional deep dives loaded only when needed
+├── references/            # optional deep dives loaded only when needed
+└── scripts/               # optional stdlib helpers that travel with the skill
 ```
 
 An agent first sees the skill's `name` and `description`. When the request matches, it loads the body

@@ -87,7 +87,7 @@ with open("filled_flat.pdf", "wb") as f:
 3. Convert with the shipped helper — do not stamp pixel coordinates into reportlab:
 
 ```bash
-python pdf/scripts/coords.py --x 120 --y 80 --dpi 150 --page-height-pt 792
+python scripts/coords.py --x 120 --y 80 --dpi 150 --page-height-pt 792
 # prints: 57.60 753.60
 ```
 

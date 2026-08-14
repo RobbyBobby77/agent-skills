@@ -36,7 +36,7 @@ A `.docx` is a ZIP of XML. Prefer high-level libraries for creation; unpack only
 | Create from scratch | **docx-js** (`npm i docx`) |
 | Fill / edit a template | `scripts/replace_text.py` (see [references/editing.md](references/editing.md)) |
 | Extract text | `pandoc file.docx -t markdown` or `python -m markitdown file.docx` |
-| Convert to PDF | `python docx/scripts/soffice.py --convert-to pdf --outdir out file.docx` |
+| Convert to PDF | `python scripts/soffice.py --convert-to pdf --outdir out file.docx` |
 | Visual QA | PDF then `pdftoppm -jpeg -r 150 file.pdf page` |
 
 **If a `.docx` / `.dotx` template is provided: edit it. Never recreate from scratch** — you will lose styles, headers, media, and theme colors.
@@ -212,7 +212,7 @@ python -m markitdown document.docx
 Legacy `.doc` → `.docx` first:
 
 ```bash
-python docx/scripts/soffice.py --convert-to docx --outdir out legacy.doc
+python scripts/soffice.py --convert-to docx --outdir out legacy.doc
 ```
 
 ---
@@ -224,10 +224,10 @@ Read [references/editing.md](references/editing.md) before touching a template.
 Word splits runs mid-word (`Hel` + `lo`). Do not sed a single `<w:t>`. Use the shipped script — it searches headers/footers and concatenated runs:
 
 ```bash
-python docx/scripts/replace_text.py template.docx output.docx \
+python scripts/replace_text.py template.docx output.docx \
   --map replacements.json
 # or
-python docx/scripts/replace_text.py template.docx output.docx \
+python scripts/replace_text.py template.docx output.docx \
   --match '[CLIENT]' --text 'Acme Corp'
 ```
 
@@ -242,7 +242,7 @@ Do not recreate a branded template with docx-js.
 3. Fix and re-render until clean
 
 ```bash
-python docx/scripts/soffice.py --convert-to pdf --outdir out output.docx
+python scripts/soffice.py --convert-to pdf --outdir out output.docx
 pdftoppm -jpeg -r 150 out/output.pdf preview
 ```
 

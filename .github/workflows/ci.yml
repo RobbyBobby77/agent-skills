@@ -20,6 +20,9 @@ jobs:
       - name: Validate SKILL.md frontmatter, references, and agents/openai.yaml
         run: python3 scripts/validate_skills.py
 
+      - name: Forward-test skill helpers
+        run: python3 scripts/forward_test.py
+
       - name: Check install.sh syntax
         run: bash -n install.sh
 

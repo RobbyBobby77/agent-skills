@@ -5,7 +5,7 @@ Prefixes =, +, @, and non-numeric - with a single quote.
 Leaves real negative numbers alone.
 
 Usage:
-  python csv/scripts/neutralize.py --in dirty.csv --out safe.csv
+  python scripts/neutralize.py --in dirty.csv --out safe.csv
 """
 
 from __future__ import annotations

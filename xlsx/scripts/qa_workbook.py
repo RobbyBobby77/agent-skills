@@ -6,7 +6,7 @@ formula, missing freeze on the first sheet, totals written as numbers next
 to a 'Total' label when a SUM exists nearby.
 
 Usage:
-  python xlsx/scripts/qa_workbook.py output.xlsx
+  python scripts/qa_workbook.py output.xlsx
 """
 
 from __future__ import annotations

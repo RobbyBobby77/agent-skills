@@ -18,8 +18,14 @@ skill-name/
 ├── SKILL.md
 ├── agents/
 │   └── openai.yaml
-└── references/        # optional
+├── references/        # optional
+└── scripts/           # optional stdlib helpers
 ```
+
+Call helpers as `python scripts/<name>.py` from the skill directory (that is how
+`install.sh` exposes them). Do not use repo-root paths like `python docx/scripts/…`.
+If the same helper must ship with more than one skill, copy it — skills install
+independently.
 
 Folder names and frontmatter `name` values must use lowercase kebab-case and match exactly.
 

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Find LibreOffice and convert a document. Works with PATH and Flatpak.
 
+Copied into docx, pptx, xlsx, and pdf — skills install independently.
+Keep the four copies identical.
+
 Usage:
   python scripts/soffice.py --convert-to pdf --outdir out file.docx
 """

@@ -6,8 +6,8 @@ the first matching run and clears the rest so formatting on that first run
 survives.
 
 Usage:
-  python docx/scripts/replace_text.py template.docx output.docx --map replacements.json
-  python docx/scripts/replace_text.py template.docx output.docx --match '[CLIENT]' --text 'Acme'
+  python scripts/replace_text.py template.docx output.docx --map replacements.json
+  python scripts/replace_text.py template.docx output.docx --match '[CLIENT]' --text 'Acme'
 """
 
 from __future__ import annotations

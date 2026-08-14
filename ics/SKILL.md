@@ -53,7 +53,7 @@ back. Do not start from a raw `BEGIN:VCALENDAR` skeleton.
 
 ```bash
 pip install icalendar
-python ics/scripts/write_event.py \
+python scripts/write_event.py \
   --summary "Design review" \
   --start "2026-03-20T11:00:00" \
   --tz America/New_York \

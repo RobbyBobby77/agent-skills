@@ -5,7 +5,7 @@ Prefers the icalendar package. Without it, emits a single UTC or all-day
 event only — recurrence and VTIMEZONE require icalendar.
 
 Usage:
-  python ics/scripts/write_event.py --summary "Design review" \\
+  python scripts/write_event.py --summary "Design review" \\
     --start 2026-03-20T11:00:00 --tz America/New_York --minutes 60 \\
     --out meeting.ics
 """

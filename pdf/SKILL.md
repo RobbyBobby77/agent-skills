@@ -310,5 +310,5 @@ Filling AcroForm fields or stamping text onto flat PDFs: follow [references/form
 ```bash
 pip install pypdf pdfplumber reportlab pdf2image pytesseract Pillow
 # Debian/Ubuntu: sudo apt install poppler-utils qpdf tesseract-ocr
-# LibreOffice for office→PDF: scripts/soffice.py (PATH or Flatpak)
+# office → PDF: python scripts/soffice.py --convert-to pdf --outdir out file.docx
 ```

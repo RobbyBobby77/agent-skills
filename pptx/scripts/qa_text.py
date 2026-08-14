@@ -5,7 +5,7 @@ Flags leftover placeholders, empty slides, and slides whose only text is a
 generic title. This does not catch overlap — still render slides as images.
 
 Usage:
-  python pptx/scripts/qa_text.py output.pptx
+  python scripts/qa_text.py output.pptx
 """
 
 from __future__ import annotations

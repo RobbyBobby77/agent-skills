@@ -5,7 +5,7 @@
 ## Replace text (default path)
 
 ```bash
-python docx/scripts/replace_text.py template.docx output.docx --map replacements.json
+python scripts/replace_text.py template.docx output.docx --map replacements.json
 ```
 
 `replacements.json` is a string-to-string object. The script walks every `word/*.xml` part (body, headers, footers, text boxes), concatenates split `<w:t>` runs, and writes the replacement into the first matching run.

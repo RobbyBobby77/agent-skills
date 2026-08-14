@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Check every skill against the CONTRIBUTING.md quality checklist.
+"""Structural checks from CONTRIBUTING.md: frontmatter, names, links, openai.yaml.
+
+Behavioral helper checks live in scripts/forward_test.py.
 
 No third-party dependencies: frontmatter here is deliberately restricted to
 two scalar/folded-block keys (name, description), so a small hand parser is

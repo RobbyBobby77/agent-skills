@@ -177,7 +177,7 @@ prefer native PowerPoint automation when available and report the platform depen
 ### Content
 
 ```bash
-python pptx/scripts/qa_text.py output.pptx
+python scripts/qa_text.py output.pptx
 python -m markitdown output.pptx | grep -iE 'lorem|ipsum|xxxx|placeholder|this (page|slide)|TODO|TBD'
 ```
 
@@ -188,7 +188,7 @@ python -m markitdown output.pptx | grep -iE 'lorem|ipsum|xxxx|placeholder|this (
 Convert and **look at every slide as an image**:
 
 ```bash
-python pptx/scripts/soffice.py --convert-to pdf --outdir out output.pptx
+python scripts/soffice.py --convert-to pdf --outdir out output.pptx
 pdftoppm -jpeg -r 150 out/output.pdf slide
 ```
 
