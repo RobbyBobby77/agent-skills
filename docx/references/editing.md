@@ -2,10 +2,21 @@
 
 **If a template is attached, EDIT IT. Never recreate with docx-js.**
 
+## Replace text (default path)
+
+```bash
+python docx/scripts/replace_text.py template.docx output.docx --map replacements.json
+```
+
+`replacements.json` is a string-to-string object. The script walks every `word/*.xml` part (body, headers, footers, text boxes), concatenates split `<w:t>` runs, and writes the replacement into the first matching run.
+
+Do not hand-sed XML for ordinary placeholders. Use the script first; drop to XML only for tracked changes, comments, or structural edits the script cannot do.
+
 ## Workflow
 
 ```
-unpack → inspect → replace text/fields → repack → visual QA
+inspect → scripts/replace_text.py → visual QA
+# unpack / repack only when you must edit XML the script cannot
 ```
 
 ### Unpack / repack (OOXML)
@@ -47,11 +58,11 @@ python -m markitdown template.docx
 unzip -l template.docx | grep word/media
 ```
 
-### Replace text safely
+### Replace text safely (only if you cannot run the script)
 
 Word splits runs unpredictably (`Hel` + `lo`). Do **not** sed a single `<w:t>Hello</w:t>` and expect it to match.
 
-**Strategy A — python-docx** (simple whole-paragraph / cell replacements):
+**Strategy A — python-docx** (simple whole-paragraph / cell replacements; loses mixed formatting in the paragraph):
 
 ```python
 from docx import Document
@@ -89,7 +100,7 @@ for section in doc.sections:
 doc.save("output.docx")
 ```
 
-**Strategy B — XML-level** when you must preserve complex run formatting: concatenate all `w:t` in a paragraph, locate the match across run boundaries, then rewrite runs. Prefer a battle-tested replace script over hand-rolled XML.
+**Strategy B — XML-level** when you must preserve complex run formatting: concatenate all `w:t` in a paragraph, locate the match across run boundaries, then rewrite runs. This is what `scripts/replace_text.py` already does — do not reimplement it for ordinary replacements.
 
 ### Headers & footers
 

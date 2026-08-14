@@ -1,4 +1,4 @@
 interface:
   display_name: "Diagrams"
-  short_description: "Create clear architecture and process diagrams"
-  default_prompt: "Use $diagrams to create the smallest clear diagram for this system or process."
+  short_description: "Draw the smallest evidence-based diagram that renders"
+  default_prompt: "Use $diagrams to draw only components you can evidence, for the destination renderer."

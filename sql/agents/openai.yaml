@@ -1,4 +1,4 @@
 interface:
   display_name: "SQL"
-  short_description: "Write and optimize safe dialect-aware SQL"
-  default_prompt: "Use $sql to write, review, or optimize this query for the correct database dialect."
+  short_description: "Write safe SQL in the engine the database actually speaks"
+  default_prompt: "Use $sql to name the dialect first and write a parameterized, authorized query."

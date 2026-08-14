@@ -10,6 +10,14 @@ description: >
 
 # PowerPoint (PPTX)
 
+## Related skills
+
+| Need | Skill |
+|------|-------|
+| Architecture figures to embed | `diagrams` |
+| Charts from data | `data-analysis` |
+| Word / Excel / PDF | `docx` / `xlsx` / `pdf` |
+
 ## Workflow
 
 1. Preserve the source and inspect slide size, masters, layouts, theme, fonts, notes, and existing visual language.
@@ -169,17 +177,22 @@ prefer native PowerPoint automation when available and report the platform depen
 ### Content
 
 ```bash
+python pptx/scripts/qa_text.py output.pptx
 python -m markitdown output.pptx | grep -iE 'lorem|ipsum|xxxx|placeholder|this (page|slide)|TODO|TBD'
 ```
+
+`qa_text.py` must exit 0. List every issue it prints. Do not skip to visual QA while placeholders remain.
 
 ### Visual
 
 Convert and **look at every slide as an image**:
 
 ```bash
-soffice --headless --convert-to pdf output.pptx
-pdftoppm -jpeg -r 150 output.pdf slide
+python pptx/scripts/soffice.py --convert-to pdf --outdir out output.pptx
+pdftoppm -jpeg -r 150 out/output.pdf slide
 ```
+
+`scripts/soffice.py` finds `soffice` on PATH or the official Flatpak. Do not assume `soffice` is on PATH.
 
 Hunt for:
 - Overlaps, overflow, cut-off text

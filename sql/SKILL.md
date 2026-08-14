@@ -1,53 +1,80 @@
 ---
 name: sql
 description: >
-  Write, review, and optimize SQL for PostgreSQL, MySQL, SQLite, BigQuery, and
-  Snowflake-style dialects. Use for queries, migrations, indexes, EXPLAIN plans,
-  window functions, CTEs, data modeling, and fixing slow or incorrect SQL. Prefer
-  this over ad-hoc string building when the task is primarily database work.
+  Write, review, and optimize SQL in the dialect the database actually speaks:
+  PostgreSQL, MySQL, SQLite, BigQuery, and Snowflake. Use for queries,
+  migrations, indexes, EXPLAIN plans, window functions, CTEs, and modeling.
+  Prefer data-analysis for interpreting result sets, csv for local files, xlsx
+  for spreadsheet deliverables. Do not run writes or EXPLAIN ANALYZE on
+  production data without explicit authorization.
 ---
 
 # SQL
+
+Agents write Postgres in a Snowflake warehouse, wrap indexed columns in
+`DATE()`, and `EXPLAIN ANALYZE` a DELETE. This skill exists to stop that.
 
 ## Related skills
 
 | Need | Skill |
 |------|-------|
-| Interpreting results, KPIs, charts, experiments | `data-analysis` |
+| Interpreting results, KPIs, charts | `data-analysis` |
 | Local flat-file prep | `csv` |
 | Spreadsheet deliverable | `xlsx` |
+| Handler / contract in front of the query | `api` |
 
 ## Workflow
 
-1. Identify the engine/version, schema, data volume, constraints, and whether execution is authorized.
-2. Inspect existing migrations and query conventions; qualify assumptions about tables and cardinality.
-3. Write parameterized SQL and validate syntax in the target dialect.
-4. For reads, test on a bounded sample and inspect the plan when performance matters.
-5. For writes or DDL, show affected rows/objects, transaction and rollback strategy, then execute only when requested.
+1. **Name the engine and version.** If you cannot, ask. Do not guess Postgres.
+2. Inspect existing schema, migrations, naming, and whether execution is authorized.
+3. Write parameterized SQL in that dialect. Qualify table assumptions.
+4. Reads: bound the sample; inspect the plan when performance matters.
+5. Writes/DDL: show affected objects, the transaction/rollback story, then run only when asked.
 
-Default to read-only analysis. Never run `EXPLAIN ANALYZE` on mutating SQL, an unbounded
-`UPDATE`/`DELETE`, or production data without explicit authorization and safeguards.
+**Hard rules**
+- Default to read-only analysis.
+- Never interpolate user input into SQL. Bind values. Allowlist + quote identifiers.
+- Never `EXPLAIN ANALYZE` mutating SQL, an unbounded `UPDATE`/`DELETE`, or production without authorization and a limit.
+- Never put `CREATE INDEX CONCURRENTLY` inside a transaction.
+- Unbounded `DELETE`/`UPDATE` is batched by key range, or it is not run.
+
+---
 
 ## Dialect first
 
-State the engine. Syntax differs for:
+State the engine in the reply. Default examples below are **PostgreSQL**.
 
-| Feature | Postgres | MySQL | SQLite | BigQuery |
-|---------|----------|-------|--------|----------|
-| Limit | `LIMIT n` | `LIMIT n` | `LIMIT n` | `LIMIT n` |
-| Upsert | `ON CONFLICT` | `ON DUPLICATE KEY` | `ON CONFLICT` | `MERGE` |
-| JSON | `jsonb` ops | `JSON_*` | `json_extract` | `JSON_*` |
-| Arrays | native | JSON arrays | limited | `ARRAY<>` |
-| ILIKE | yes | `LIKE` + lower | `LIKE` | `LIKE` |
+| Feature | Postgres | MySQL | SQLite | BigQuery | Snowflake |
+|---------|----------|-------|--------|----------|-----------|
+| Limit | `LIMIT n` | `LIMIT n` | `LIMIT n` | `LIMIT n` | `LIMIT n` |
+| Upsert | `ON CONFLICT` | `ON DUPLICATE KEY` | `ON CONFLICT` | `MERGE` | `MERGE` |
+| JSON | `jsonb` | `JSON_*` | `json_extract` | `JSON_*` | `VARIANT` / `:` path |
+| Arrays | native | JSON arrays | limited | `ARRAY<>` | `ARRAY` |
+| ILIKE | yes | `LIKE` + `LOWER` | `LIKE` | `LIKE` | `ILIKE` |
+| Qualify windows | subquery | subquery | subquery | `QUALIFY` | `QUALIFY` |
+| Bind style | `$1` | `%s` / `?` | `?` | `@param` / scripting | `%(name)s` / `?` |
+| Identity | `GENERATED` / `serial` | `AUTO_INCREMENT` | `INTEGER PRIMARY KEY` | generate / `GENERATE_UUID` | sequences / UUID |
+| Time now | `NOW()` | `NOW()` | `datetime('now')` | `CURRENT_TIMESTAMP()` | `CURRENT_TIMESTAMP()` |
 
-Default examples below are **PostgreSQL** unless noted.
+Portable query recipes (dedupe, keyset, gaps-and-islands): [references/patterns.md](references/patterns.md).
+
+### Engine landmines
+
+**Postgres** — `COUNT(col)` ignores NULLs. `NOT IN (NULL-able subquery)` is empty; use `NOT EXISTS`. Partial indexes need the same predicate in the query. `CONCURRENTLY` cannot run in a transaction.
+
+**MySQL** — `ONLY_FULL_GROUP_BY` rejects implicit groups. Identifier quotes are backticks. `utf8` is `utf8mb3`; prefer `utf8mb4`. `EXPLAIN ANALYZE` exists only on 8.0.18+.
+
+**SQLite** — types are affinities, not constraints, unless `STRICT`. `ALTER TABLE` is limited (no drop column on old versions, no add constraint). One writer at a time.
+
+**BigQuery** — you pay for bytes scanned. `SELECT *` is a cost bug. Partition + cluster; filter the partition column with a literal/range, not a wrapper. `QUALIFY` filters windows. No indexes to "add."
+
+**Snowflake** — warehouse size drives both cost and time. `VARIANT` paths are `:foo` / `['foo']`, not `->`. `QUALIFY` and `MERGE` are first-class. Clustering is not a B-tree index. `INFORMATION_SCHEMA` views are billed; prefer `SHOW` / account usage for exploration. Time travel exists — do not treat `DELETE` as gone.
 
 ---
 
 ## Query style
 
 ```sql
--- Prefer CTEs for readable multi-step logic
 WITH paid AS (
   SELECT user_id, SUM(amount_cents) AS revenue_cents
   FROM orders
@@ -63,98 +90,75 @@ ORDER BY revenue_cents DESC
 LIMIT 100;
 ```
 
-Rules:
-1. **Explicit columns** — no `SELECT *` in production queries
-2. **Filter early** — WHERE before heavy joins when possible
-3. **sargable predicates** — don't wrap indexed cols: `created_at >= $1` not `DATE(created_at) = ...`
-4. **JOIN types intentional** — INNER vs LEFT; never accidental cross join
-5. **Parameters** — `$1` / `?` / named binds; never string-interpolate user input
-6. **Aliases** short but clear (`o` for orders OK; `x`/`t1` not OK)
-7. **NULLS** — know `COUNT(col)` vs `COUNT(*)`; use `COALESCE` for display
-8. **Dynamic identifiers** — allowlist and quote them with the driver; bind parameters do not substitute table/column names
+1. Explicit columns — no `SELECT *` in production or BigQuery
+2. Filter early; keep predicates sargable (`created_at >= $1`, not `DATE(created_at) = …`)
+3. JOIN type is a decision. Accidental cross joins are defects
+4. Parameters for values. Allowlisted quoted identifiers for table/column names
+5. Aliases: `o` for orders is fine; `x` / `t1` is not
+6. Know `COUNT(col)` vs `COUNT(*)`
 
 ---
 
-## Window functions
+## Windows, indexes, plans
 
 ```sql
-SELECT
-  user_id,
-  amount_cents,
-  created_at,
+SELECT user_id, amount_cents, created_at,
   ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn,
   SUM(amount_cents) OVER (PARTITION BY user_id) AS user_total,
   LAG(created_at) OVER (PARTITION BY user_id ORDER BY created_at) AS prev_at
 FROM orders;
 ```
 
-Common: `ROW_NUMBER`, `RANK`, `DENSE_RANK`, `LAG`/`LEAD`, `SUM/AVG() OVER`, `first_value`.
-
----
-
-## Indexes (mental model)
-
 ```sql
--- Equality + range: put equality cols first
+-- Postgres: equality first, then range. Partial index matches the query predicate.
 CREATE INDEX CONCURRENTLY idx_orders_user_created
   ON orders (user_id, created_at DESC)
-  WHERE deleted_at IS NULL;  -- partial index
+  WHERE deleted_at IS NULL;
 ```
 
-- Index columns used in `WHERE`, `JOIN`, `ORDER BY`
-- Composite: leftmost prefix rule
-- Covering / INCLUDE when selective queries fetch few extra cols
-- Don't index low-cardinality alone (`boolean`) without reason
-
----
-
-## EXPLAIN
+Snowflake/BigQuery: do not cargo-cult B-tree indexes. Partition/cluster instead.
 
 ```sql
-EXPLAIN (ANALYZE, BUFFERS) SELECT ...;
+EXPLAIN (ANALYZE, BUFFERS) SELECT ...;   -- Postgres, authorized, non-mutating
 ```
 
-Hunt for: Seq Scan on large tables, Nested Loop explosions, high rows removed by filter, sorts spilling to disk.
+Hunt: sequential scans on large tables, nested-loop explosions, rows removed by filter, on-disk sorts.
 
 ---
 
-## Migrations mindset
+## Migrations
 
 ```sql
 BEGIN;
-ALTER TABLE users ADD COLUMN locale text NOT NULL DEFAULT 'en';
--- backfill if needed
--- ADD CONSTRAINT / INDEX CONCURRENTLY outside long txn when required
+ALTER TABLE users ADD COLUMN locale text;           -- nullable first
+-- backfill in batches
+-- ALTER TABLE users ALTER COLUMN locale SET NOT NULL;  -- later
 COMMIT;
+-- CREATE INDEX CONCURRENTLY ...  -- outside the transaction
 ```
 
 - Expand/contract for zero-downtime (add nullable → backfill → constrain)
-- Never rename+transform in one scary step without rollback plan
-- Store migrations as ordered files (`001_…sql`)
-
-More: [references/patterns.md](references/patterns.md)
+- Never rename and transform in one step without a rollback plan
+- Store ordered files (`001_….sql`) matching the repo's migrator
 
 ---
 
 ## Anti-patterns
 
-- `NOT IN (subquery with nulls)` — use `NOT EXISTS`
-- `OR` across columns that kills indexes — `UNION ALL` sometimes better
-- Functions on column side of compare
-- Implicit type casts that prevent index use
-- Unbounded `DELETE`/`UPDATE` — batch with key ranges
-- Trusting client-side string SQL concat
+- `NOT IN (subquery with nulls)` — `NOT EXISTS`
+- `OR` across different columns that kills the index — `UNION ALL` is sometimes the plan you want
+- Functions or casts on the column side of a comparison
+- Trusting client-side string concat
+- Running a migration you have not shown
 
 ---
 
-## SQLite notes
+## Verify
 
-- `INTEGER PRIMARY KEY` is rowid alias
-- Limited `ALTER TABLE`
-- Good for local/dev; careful with concurrent writes
-
-## BigQuery notes
-
-- Partition + cluster for cost
-- Avoid `SELECT *` (bytes billed)
-- `QUALIFY` for window filters
+```text
+engine + version stated
+binds used; no interpolated user input
+read-only unless authorized
+LIMIT / partition filter on expensive scans
+writes: row estimate + rollback
+```

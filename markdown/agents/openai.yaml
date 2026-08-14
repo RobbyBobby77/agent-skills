@@ -1,4 +1,4 @@
 interface:
   display_name: "Markdown"
-  short_description: "Write clear maintainable Markdown documentation"
-  default_prompt: "Use $markdown to write or improve this documentation for its target renderer."
+  short_description: "Edit docs for the real renderer without rewriting the repo"
+  default_prompt: "Use $markdown to change the smallest surface of this documentation so it matches nearby voice and actually renders."

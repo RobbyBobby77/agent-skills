@@ -1,4 +1,4 @@
 interface:
   display_name: "JSON, YAML, and TOML"
-  short_description: "Edit and validate structured configuration files"
-  default_prompt: "Use $json-yaml to safely edit, convert, or validate this structured configuration."
+  short_description: "Edit config without destroying comments, types, or quotes"
+  default_prompt: "Use $json-yaml to change the smallest structure in this file and re-parse it."

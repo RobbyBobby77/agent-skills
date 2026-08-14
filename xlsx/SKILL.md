@@ -10,6 +10,14 @@ description: >
 
 # Excel (XLSX)
 
+## Related skills
+
+| Need | Skill |
+|------|-------|
+| Flat-file cleanup / injection | `csv` |
+| Insights rather than a workbook | `data-analysis` |
+| Word / slides / PDF | `docx` / `pptx` / `pdf` |
+
 ## Workflow
 
 1. Preserve the input and inspect sheets, dimensions, formulas, names, tables, charts, validation, hidden content, and macros.
@@ -61,6 +69,17 @@ feature-rich workbook when exact round-trip fidelity matters, disable macros whi
 not refresh external connections unless requested.
 
 Editing a digitally signed workbook invalidates the signature; flag this before making changes.
+
+### What this stack will not preserve
+
+| Feature | openpyxl / xlsxwriter |
+|---------|------------------------|
+| Cell values, most formulas, basic styles | Yes |
+| Tables, data validation, freeze, autofilter | Usually |
+| VBA / macros | Only with `keep_vba=True` and `.xlsm` |
+| Pivot caches, Power Query, slicers, ActiveX | No — use Excel |
+| Digital signatures | Invalidated by any write |
+| Cached formula results | Not computed until Excel/LibreOffice recalculates |
 
 ---
 
@@ -205,7 +224,7 @@ More patterns: [references/formulas.md](references/formulas.md), [references/for
 10. **Text wrap + alignment** for long headers; vertical center for tables
 11. **Validate assumptions** — data validation dropdowns for categories when building input sheets
 12. **Never put secrets in workbooks** casually; strip credentials before sharing
-13. **Treat untrusted text as text** — cells beginning with `=`, `+`, `-`, or `@` can become formulas in spreadsheet applications
+13. **Treat untrusted text as text** — prefix `=`, `+`, `@`, and non-numeric `-` (same rule as `csv`). Real negative numbers stay numbers.
 
 ### Formula gotchas
 
@@ -216,11 +235,15 @@ More patterns: [references/formulas.md](references/formulas.md), [references/for
 
 ### LibreOffice recalculation (optional headless)
 
+`xlsx → xlsx` often keeps stale cached values (a `SUM` stays `0`). Round-trip through Calc's native format:
+
 ```bash
-mkdir -p recalculated
-soffice --headless --convert-to xlsx --outdir recalculated output.xlsx
+python xlsx/scripts/soffice.py --convert-to ods --outdir tmp output.xlsx
+python xlsx/scripts/soffice.py --convert-to xlsx --outdir recalculated tmp/output.ods
 # or open and save once in Excel; verify the converted output before replacing anything
 ```
+
+`scripts/soffice.py` finds `soffice` on PATH or the official Flatpak. Do not assume `soffice` is on PATH.
 
 ---
 
@@ -263,6 +286,10 @@ Keep a recoverable backup for replacement workflows unless the user explicitly d
 ---
 
 ## QA checklist
+
+```bash
+python xlsx/scripts/qa_workbook.py output.xlsx
+```
 
 - [ ] Headers frozen, filter on
 - [ ] Currency/percent/date formats applied

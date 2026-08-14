@@ -84,14 +84,14 @@ with open("filled_flat.pdf", "wb") as f:
 
 1. `pdftoppm -png -r 150 form.pdf /tmp/f`
 2. Open the PNG; note x,y in pixels from **top-left**
-3. Convert to PDF points (72 pt/inch):
+3. Convert with the shipped helper — do not stamp pixel coordinates into reportlab:
 
-```
-pt_x = px_x * 72 / dpi
-pt_y = page_height_pt - (px_y * 72 / dpi)  # flip Y
+```bash
+python pdf/scripts/coords.py --x 120 --y 80 --dpi 150 --page-height-pt 792
+# prints: 57.60 753.60
 ```
 
-US Letter page height ≈ 792 pt.
+US Letter page height ≈ 792 pt; A4 ≈ 841.89 pt. Y grows **up** in PDF.
 
 ## 4. QA loop
 

@@ -10,6 +10,13 @@ description: >
 
 # PDFs
 
+## Related skills
+
+| Need | Skill |
+|------|-------|
+| Native Word / Excel / PowerPoint | `docx` / `xlsx` / `pptx` |
+| Analysis of extracted tables | `csv` / `data-analysis` |
+
 ## Workflow
 
 1. Preserve the source and determine whether the PDF is born-digital, scanned, encrypted, signed, or form-based.
@@ -29,7 +36,7 @@ description: >
 | Render pages to images | `pdftoppm` / `pdf2image` |
 | Embedded images out | `pdfimages -all` |
 | OCR scans | `pdf2image` + `pytesseract` |
-| Fill forms | see [references/forms.md](references/forms.md) |
+| Fill forms | see [references/forms.md](references/forms.md); pixel→point via `scripts/coords.py` |
 | Low-level repair | `qpdf` |
 
 ```bash
@@ -303,4 +310,5 @@ Filling AcroForm fields or stamping text onto flat PDFs: follow [references/form
 ```bash
 pip install pypdf pdfplumber reportlab pdf2image pytesseract Pillow
 # Debian/Ubuntu: sudo apt install poppler-utils qpdf tesseract-ocr
+# LibreOffice for office→PDF: scripts/soffice.py (PATH or Flatpak)
 ```

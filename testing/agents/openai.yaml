@@ -1,4 +1,4 @@
 interface:
   display_name: "Automated Testing"
-  short_description: "Design reliable automated tests"
-  default_prompt: "Use $testing to add focused, deterministic tests that match this repository."
+  short_description: "Add tests that match CI and kill flakes at the source"
+  default_prompt: "Use $testing to inspect this repo's runner and add the lowest reliable test that locks the behavior."

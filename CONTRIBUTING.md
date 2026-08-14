@@ -43,6 +43,7 @@ move detailed recipes, schemas, and variant-specific guidance into directly link
 - [ ] Existing files and user changes are preserved by default.
 - [ ] Commands avoid secrets, brittle substitutions, and unnecessary interactivity.
 - [ ] Examples are syntactically valid and tested when dependency-sensitive.
+- [ ] `python scripts/forward_test.py` passes after changes to helpers or high-risk skills.
 - [ ] Local Markdown references resolve.
 - [ ] `agents/openai.yaml` still matches the skill's intent.
 - [ ] `bash -n install.sh` and `git diff --check` pass.

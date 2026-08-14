@@ -1,23 +1,33 @@
-# SQL Patterns
+# SQL patterns (dialect-aware)
 
-## Deduplicate keep latest
+Default is Postgres. A second block is included when the portable form differs.
+
+## Deduplicate, keep latest
 
 ```sql
+-- Postgres
 SELECT DISTINCT ON (user_id) user_id, event_id, created_at, event_type
 FROM events
 ORDER BY user_id, created_at DESC;
--- portable:
+```
+
+```sql
+-- portable / BigQuery / Snowflake / MySQL 8
 SELECT user_id, event_id, created_at, event_type
 FROM (
   SELECT user_id, event_id, created_at, event_type,
-    ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) rn
+    ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY created_at DESC) AS rn
   FROM events
-) t WHERE rn = 1;
+) t
+WHERE rn = 1;
 ```
 
-## Upsert (Postgres)
+BigQuery/Snowflake can fold the filter: `… QUALIFY ROW_NUMBER() OVER (…) = 1`.
+
+## Upsert
 
 ```sql
+-- Postgres / SQLite
 INSERT INTO users (id, email, name)
 VALUES ($1, $2, $3)
 ON CONFLICT (email) DO UPDATE
@@ -25,15 +35,46 @@ SET name = EXCLUDED.name,
     updated_at = NOW();
 ```
 
-## Gaps & islands (sessions)
+```sql
+-- MySQL
+INSERT INTO users (id, email, name)
+VALUES (%s, %s, %s)
+ON DUPLICATE KEY UPDATE
+  name = VALUES(name),
+  updated_at = NOW();
+```
 
 ```sql
--- flag new session if gap > 30 min
+-- Snowflake / BigQuery
+MERGE INTO users t
+USING (SELECT %s AS id, %s AS email, %s AS name) s
+ON t.email = s.email
+WHEN MATCHED THEN UPDATE SET name = s.name, updated_at = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (id, email, name) VALUES (s.id, s.email, s.name);
+```
+
+## Keyset pagination (preferred over OFFSET)
+
+```sql
+SELECT id, created_at, title
+FROM items
+WHERE (created_at, id) < ($1, $2)
+ORDER BY created_at DESC, id DESC
+LIMIT 50;
+```
+
+MySQL needs a comparable row constructor or an expanded `OR` form. Do not `OFFSET 100000`.
+
+## Gaps and islands (sessions)
+
+```sql
 WITH ordered AS (
   SELECT user_id, ts,
-    CASE WHEN ts - LAG(ts) OVER (PARTITION BY user_id ORDER BY ts) > INTERVAL '30 min'
-         OR LAG(ts) OVER (PARTITION BY user_id ORDER BY ts) IS NULL
-    THEN 1 ELSE 0 END AS is_new
+    CASE
+      WHEN ts - LAG(ts) OVER (PARTITION BY user_id ORDER BY ts) > INTERVAL '30 min'
+        OR LAG(ts) OVER (PARTITION BY user_id ORDER BY ts) IS NULL
+      THEN 1 ELSE 0
+    END AS is_new
   FROM events
 ),
 marked AS (
@@ -43,13 +84,7 @@ marked AS (
 SELECT user_id, ts, session_id FROM marked;
 ```
 
-## Running total
-
-```sql
-SELECT day, revenue,
-  SUM(revenue) OVER (ORDER BY day) AS cumulative
-FROM daily;
-```
+Snowflake interval math uses `DATEDIFF`; BigQuery uses `TIMESTAMP_DIFF`. Same idea.
 
 ## Top-N per group
 
@@ -58,23 +93,25 @@ SELECT order_id, region, amount
 FROM (
   SELECT order_id, region, amount,
     ROW_NUMBER() OVER (PARTITION BY region ORDER BY amount DESC) AS rn
-  FROM orders o
-) t WHERE rn <= 3;
+  FROM orders
+) t
+WHERE rn <= 3;
 ```
 
-## Soft delete filter
+## Soft delete
 
 ```sql
 WHERE deleted_at IS NULL
--- partial index:
--- CREATE INDEX ... ON t(col) WHERE deleted_at IS NULL;
+-- Postgres partial index:
+-- CREATE INDEX … ON t(col) WHERE deleted_at IS NULL;
 ```
 
-## Pagination (keyset > OFFSET)
+Every query on that table needs the predicate, or the index will not match and deleted rows leak.
+
+## Running total
 
 ```sql
-SELECT * FROM items
-WHERE (created_at, id) < ($1, $2)
-ORDER BY created_at DESC, id DESC
-LIMIT 50;
+SELECT day, revenue,
+  SUM(revenue) OVER (ORDER BY day) AS cumulative
+FROM daily;
 ```

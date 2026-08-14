@@ -27,6 +27,13 @@ description: >
 5. Validate row/column counts, dtypes, and keys; **re-parse** the written output
 6. Report output path, schema summary, and every material cleanup decision
 
+**Hard rules**
+- Byte-sample before a full load. Encoding and delimiter are observed, not assumed.
+- IDs, postal codes, and leading-zero fields stay strings until you prove they are numbers.
+- Ambiguous dates (`01/02/03`) need `format=` or an explicit `dayfirst`. Do not guess US vs EU.
+- Write a new file. Re-parse it. `wc -l` is not a row count (header + broken quotes).
+- Formula injection: neutralize `=`, `+`, `@`, and non-numeric `-` when Excel/Sheets will open the file.
+
 ## Tool choice
 
 | Task | Tool |
@@ -210,17 +217,25 @@ df.to_parquet("clean.parquet", index=False)  # preferred for analytics pipelines
 
 ### Formula injection (Excel consumers)
 
-When the CSV will be opened in Excel/Sheets, treat untrusted cells starting with `=`, `+`, `-`, or `@` as risky:
+When the CSV will be opened in Excel/Sheets, treat untrusted cells starting with `=`, `+`, `@`, or a non-numeric `-` as formulas. Do not prefix real negative numbers.
 
 ```python
-def neutralize(val: str) -> str:
-    if isinstance(val, str) and val[:1] in "=+-@":
-        return "'" + val  # or strip leading char per policy
+import re
+
+_NUMERIC = re.compile(r"^-?\d+(\.\d+)?$")
+
+def neutralize(val):
+    if not isinstance(val, str) or not val:
+        return val
+    if val[0] in "=+@" or (val[0] == "-" and not _NUMERIC.match(val)):
+        return "'" + val
     return val
 
 for c in df.select_dtypes("object"):
-    df[c] = df[c].map(lambda x: neutralize(x) if isinstance(x, str) else x)
+    df[c] = df[c].map(neutralize)
 ```
+
+Same rule lives in `scripts/neutralize.py` for fixtures and non-pandas paths.
 
 ---
 

@@ -1,4 +1,4 @@
 interface:
   display_name: "Docker"
-  short_description: "Build and debug secure Docker environments"
-  default_prompt: "Use $docker to containerize or debug this project with a secure, reproducible setup."
+  short_description: "Containerize and debug with the repo's real runtime"
+  default_prompt: "Use $docker to inspect this repo's lockfile and produce or fix a multi-stage, non-root image."
