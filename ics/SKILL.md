@@ -51,6 +51,8 @@ back. Do not start from a raw `BEGIN:VCALENDAR` skeleton.
 
 ## Generate
 
+Run `python scripts/…` from this skill's directory.
+
 ```bash
 pip install icalendar
 python scripts/write_event.py \

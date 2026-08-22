@@ -10,13 +10,15 @@ from __future__ import annotations
 import csv
 import importlib.util
 import io
-import json
 import shutil
 import subprocess
 import sys
 import tempfile
 import zipfile
+from argparse import Namespace
+from datetime import datetime, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 ROOT = Path(__file__).resolve().parent.parent
 FAILED: list[str] = []
@@ -51,19 +53,57 @@ def test_csv_neutralize() -> None:
         "-12.5": "-12.5",
         "hello": "hello",
         "": "",
+        "\t=CMD()": "'\t=CMD()",
+        " =CMD()": "' =CMD()",
+        "\n=CMD()": "'\n=CMD()",
+        "\r=CMD()": "'\r=CMD()",
+        " -12.5": " -12.5",
     }
     for raw, expected in cases.items():
         got = mod.neutralize(raw)
         check(f"csv.neutralize[{raw!r}]", got == expected, f"got {got!r}")
 
+    old = sys.argv
     with tempfile.TemporaryDirectory() as tmp:
         src = Path(tmp) / "in.csv"
         dst = Path(tmp) / "out.csv"
         src.write_text("id,note\n1,=HYPERLINK(\"x\")\n2,-4\n", encoding="utf-8")
-        sys.argv = ["neutralize.py", "--in", str(src), "--out", str(dst)]
-        rc = mod.main()
+        try:
+            sys.argv = ["neutralize.py", "--in", str(src), "--out", str(dst)]
+            rc = mod.main()
+        finally:
+            sys.argv = old
         rows = list(csv.reader(dst.open(newline="", encoding="utf-8")))
         check("csv.neutralize.file", rc == 0 and rows[1][1].startswith("'") and rows[2][1] == "-4")
+
+        semi = Path(tmp) / "eu.csv"
+        semi_out = Path(tmp) / "eu-out.csv"
+        semi.write_bytes("id;note\n1;=HYPERLINK(\"x\")\n".encode("latin-1"))
+        try:
+            sys.argv = [
+                "neutralize.py", "--in", str(semi), "--out", str(semi_out),
+                "--encoding", "latin-1", "--delimiter", ";",
+            ]
+            rc = mod.main()
+        finally:
+            sys.argv = old
+        semi_rows = list(csv.reader(semi_out.open(newline="", encoding="latin-1"), delimiter=";"))
+        check("csv.neutralize.semicolon", rc == 0 and semi_rows[1][1].startswith("'"), semi_rows)
+
+        sniffed = Path(tmp) / "sniff.csv"
+        sniffed_out = Path(tmp) / "sniff-out.csv"
+        sniffed.write_text("id;note\n1;=CMD()\n2;ok\n3;more\n", encoding="utf-8")
+        try:
+            sys.argv = ["neutralize.py", "--in", str(sniffed), "--out", str(sniffed_out)]
+            rc = mod.main()
+        finally:
+            sys.argv = old
+        sniffed_rows = list(csv.reader(sniffed_out.open(newline="", encoding="utf-8"), delimiter=";"))
+        check(
+            "csv.neutralize.sniff_semicolon",
+            rc == 0 and len(sniffed_rows[0]) == 2 and sniffed_rows[1][1].startswith("'"),
+            sniffed_rows,
+        )
 
 
 def test_pdf_coords() -> None:
@@ -149,6 +189,10 @@ def test_pptx_qa() -> None:
             check("pptx.qa.clean", mod.main() == 0)
             sys.argv = ["qa_text.py", str(dirty)]
             check("pptx.qa.dirty", mod.main() == 1)
+            generic = Path(tmp) / "generic.pptx"
+            _minimal_pptx(generic, [["Title"]])
+            sys.argv = ["qa_text.py", str(generic)]
+            check("pptx.qa.generic_title", mod.main() == 1)
         finally:
             sys.argv = old
 
@@ -228,6 +272,41 @@ def test_ics() -> None:
             sys.argv = old
         holiday = all_day.read_text()
         check("ics.all_day_exclusive", "20260704" in holiday and "20260705" in holiday, holiday)
+
+        start = datetime(2026, 3, 20, 11, 0, tzinfo=ZoneInfo("America/New_York"))
+        end = start + timedelta(minutes=60)
+        std_args = Namespace(
+            summary="Meet\r\nDTSTART:19970101T000000Z;note,path\\x",
+            uid="uid-1",
+            method="PUBLISH",
+            sequence=0,
+            rrule="",
+            organizer="",
+            attendee=[],
+            byday=[],
+        )
+        raw = mod.write_stdlib(std_args, start, end)
+        text = raw.decode()
+        dtstart_props = [ln for ln in text.split("\r\n") if ln.startswith("DTSTART")]
+        check("ics.stdlib.one_dtstart_prop", len(dtstart_props) == 1, text)
+        check("ics.stdlib.escaped_nl", "SUMMARY:Meet\\nDTSTART:" in text, text)
+        check("ics.stdlib.escaped_semi_comma_bs", r"\;note\,path\\x" in text, text)
+        std_args.method = "REQUEST"
+        std_args.summary = "ok"
+        refused_request = False
+        try:
+            mod.write_stdlib(std_args, start, end)
+        except SystemExit:
+            refused_request = True
+        check("ics.stdlib.refuse_request", refused_request)
+        std_args.method = "PUBLISH"
+        std_args.rrule = "WEEKLY"
+        refused_rrule = False
+        try:
+            mod.write_stdlib(std_args, start, end)
+        except SystemExit:
+            refused_rrule = True
+        check("ics.stdlib.refuse_rrule", refused_rrule)
 
 
 def test_yaml_norway() -> None:
@@ -368,6 +447,11 @@ def test_skill_claims() -> None:
     docker = (ROOT / "docker/SKILL.md").read_text()
     check("docker.python_multistage", "AS builder" in docker and "AS runner" in docker)
     check("docker.dockerignore_sane", "Dockerfile*" not in docker.split("## .dockerignore")[1].split("## Compose")[0] or "Do **not**" in docker)
+    testing = (ROOT / "testing/SKILL.md").read_text()
+    check("testing.no_pytest_count_flag", "pytest --count=" not in testing)
+    check("testing.no_vitest_repeat_flag", "vitest run --repeat" not in testing)
+    da = (ROOT / "data-analysis/SKILL.md").read_text()
+    check("data_analysis.to_period_strips_tz", "tz_localize(None)" in da and ".dt.to_period" in da)
 
 
 def main() -> int:

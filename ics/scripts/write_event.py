@@ -2,7 +2,7 @@
 """Write a timezone-aware .ics and parse it back.
 
 Prefers the icalendar package. Without it, emits a single UTC or all-day
-event only — recurrence and VTIMEZONE require icalendar.
+event only — recurrence, METHOD:REQUEST, and VTIMEZONE require icalendar.
 
 Usage:
   python scripts/write_event.py --summary "Design review" \\
@@ -61,10 +61,26 @@ def _fmt_dt(dt: datetime) -> str:
     return utc.strftime("%Y%m%dT%H%M%SZ")
 
 
+def escape_text(value: str) -> str:
+    """RFC 5545 TEXT: backslash, semicolon, comma, then CR/LF → \\\\n."""
+    return (
+        value.replace("\\", "\\\\")
+        .replace(";", "\\;")
+        .replace(",", "\\,")
+        .replace("\r\n", "\\n")
+        .replace("\n", "\\n")
+        .replace("\r", "\\n")
+    )
+
+
 def write_stdlib(args, start, end) -> bytes:
     if args.rrule:
         raise SystemExit("recurrence requires the icalendar package")
-    uid = args.uid or f"{uuid.uuid4()}@agent-skills"
+    if args.method == "REQUEST":
+        raise SystemExit("METHOD:REQUEST requires the icalendar package")
+    if args.organizer or args.attendee:
+        raise SystemExit("organizer/attendees require the icalendar package")
+    uid = escape_text(args.uid or f"{uuid.uuid4()}@agent-skills")
     stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     if isinstance(start, date) and not isinstance(start, datetime):
         dtstart = f"DTSTART;VALUE=DATE:{start.strftime('%Y%m%d')}"
@@ -83,7 +99,7 @@ def write_stdlib(args, start, end) -> bytes:
         f"DTSTAMP:{stamp}",
         dtstart,
         dtend,
-        f"SUMMARY:{args.summary}",
+        f"SUMMARY:{escape_text(args.summary)}",
         f"STATUS:{status}",
         f"SEQUENCE:{args.sequence}",
         "END:VEVENT",

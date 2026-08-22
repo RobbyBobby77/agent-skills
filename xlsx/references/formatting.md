@@ -116,7 +116,7 @@ ws.conditional_formatting.add("F3:F100", CellIsRule(
 ```python
 ws["B2"].protection = Protection(locked=False)  # input cell
 ws.protection.sheet = True
-ws.protection.password = "secret"
+ws.protection.password = "<sheet-password>"
 ```
 
 ## Named styles (reuse)

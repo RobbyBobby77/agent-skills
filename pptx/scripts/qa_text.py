@@ -21,6 +21,10 @@ BAD = re.compile(
     r"lorem|ipsum|xxxx|placeholder|this (page|slide)|TODO|TBD|click to add",
     re.I,
 )
+GENERIC_TITLE = re.compile(
+    r"^(title|untitled( slide)?|slide( title)?|slide\s*\d+|presentation( title)?|click to add title)$",
+    re.I,
+)
 
 
 def slide_texts(raw: bytes) -> list[str]:
@@ -51,6 +55,10 @@ def main() -> int:
                 if BAD.search(t):
                     print(f"slide {num}: placeholder {t!r}")
                     issues += 1
+            nonempty = [t.strip() for t in texts if t.strip()]
+            if len(nonempty) == 1 and GENERIC_TITLE.match(nonempty[0]):
+                print(f"slide {num}: generic title only {nonempty[0]!r}")
+                issues += 1
     print(f"{len(slides)} slides, {issues} issue(s)")
     return 1 if issues else 0
 

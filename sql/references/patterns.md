@@ -36,18 +36,27 @@ SET name = EXCLUDED.name,
 ```
 
 ```sql
--- MySQL
+-- MySQL 8.0.20+ (VALUES(col) is deprecated)
 INSERT INTO users (id, email, name)
-VALUES (%s, %s, %s)
+VALUES (%s, %s, %s) AS new
 ON DUPLICATE KEY UPDATE
-  name = VALUES(name),
+  name = new.name,
   updated_at = NOW();
 ```
 
 ```sql
--- Snowflake / BigQuery
+-- Snowflake
 MERGE INTO users t
-USING (SELECT %s AS id, %s AS email, %s AS name) s
+USING (SELECT %(id)s AS id, %(email)s AS email, %(name)s AS name) s
+ON t.email = s.email
+WHEN MATCHED THEN UPDATE SET name = s.name, updated_at = CURRENT_TIMESTAMP()
+WHEN NOT MATCHED THEN INSERT (id, email, name) VALUES (s.id, s.email, s.name);
+```
+
+```sql
+-- BigQuery
+MERGE INTO users t
+USING (SELECT @id AS id, @email AS email, @name AS name) s
 ON t.email = s.email
 WHEN MATCHED THEN UPDATE SET name = s.name, updated_at = CURRENT_TIMESTAMP()
 WHEN NOT MATCHED THEN INSERT (id, email, name) VALUES (s.id, s.email, s.name);

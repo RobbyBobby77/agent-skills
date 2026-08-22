@@ -39,6 +39,8 @@ A `.docx` is a ZIP of XML. Prefer high-level libraries for creation; unpack only
 | Convert to PDF | `python scripts/soffice.py --convert-to pdf --outdir out file.docx` |
 | Visual QA | PDF then `pdftoppm -jpeg -r 150 file.pdf page` |
 
+Run `python scripts/…` from this skill's directory.
+
 **If a `.docx` / `.dotx` template is provided: edit it. Never recreate from scratch** — you will lose styles, headers, media, and theme colors.
 
 ---
@@ -52,7 +54,7 @@ npm install docx
 ```javascript
 const { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
         Header, Footer, AlignmentType, HeadingLevel, BorderStyle, WidthType,
-        ShadingType, PageNumber, PageBreak, LevelFormat } = require("docx");
+        ShadingType, PageNumber, PageBreak, LevelFormat, PageOrientation } = require("docx");
 const fs = require("fs");
 
 const border = { style: BorderStyle.SINGLE, size: 1, color: "CCCCCC" };

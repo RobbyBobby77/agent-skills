@@ -123,7 +123,13 @@ A flake is a test that depends on something you did not control. Do not retry it
 
 Procedure when a test is intermittent:
 
-1. Run it in a loop (`pytest --count=20`, `go test -count=20`, `vitest run --repeat`) until it fails locally.
+1. Run it in a loop until it fails locally. Stock pytest has no `--count`; Vitest has no `--repeat`. Keep `go test -count=20`.
+
+   ```bash
+   for i in $(seq 20); do pytest path/to/test_foo.py::test_name -q || break; done
+   go test ./pkg/billing -run TestRefund -count=20
+   for i in $(seq 20); do npx vitest run path/to/foo.test.ts -t "name" || break; done
+   ```
 2. Classify the dependency: clock, timezone, unordered collection, shared filesystem/port, real network, sleep, leaked global, test-order coupling.
 3. Remove the dependency. Isolation beats `waitFor` timeouts; `waitFor` beats `sleep`.
 4. Re-run the loop. If you cannot reproduce, say so — do not "fix" a flake you never saw fail.

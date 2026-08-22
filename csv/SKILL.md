@@ -217,7 +217,7 @@ df.to_parquet("clean.parquet", index=False)  # preferred for analytics pipelines
 
 ### Formula injection (Excel consumers)
 
-When the CSV will be opened in Excel/Sheets, treat untrusted cells starting with `=`, `+`, `@`, or a non-numeric `-` as formulas. Do not prefix real negative numbers.
+When the CSV will be opened in Excel/Sheets, treat untrusted cells starting with `=`, `+`, `@`, or a non-numeric `-` (including after a leading tab/CR/LF/space) as formulas. Do not prefix real negative numbers.
 
 ```python
 import re
@@ -227,7 +227,10 @@ _NUMERIC = re.compile(r"^-?\d+(\.\d+)?$")
 def neutralize(val):
     if not isinstance(val, str) or not val:
         return val
-    if val[0] in "=+@" or (val[0] == "-" and not _NUMERIC.match(val)):
+    lead = val.lstrip("\t\r\n ")
+    if not lead:
+        return val
+    if lead[0] in "=+@" or (lead[0] == "-" and not _NUMERIC.match(lead)):
         return "'" + val
     return val
 
@@ -236,6 +239,7 @@ for c in df.select_dtypes("object"):
 ```
 
 Same rule lives in `scripts/neutralize.py` for fixtures and non-pandas paths.
+Run `python scripts/…` from this skill's directory.
 
 ---
 
