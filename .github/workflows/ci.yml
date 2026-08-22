@@ -21,6 +21,9 @@ jobs:
         run: python3 scripts/validate_skills.py
 
       - name: Forward-test skill helpers
+        # Office integration (LibreOffice/poppler) is skippable: installing those
+        # packages on GitHub-hosted runners is flaky, and the helpers skip when
+        # soffice is absent. Do not add LibreOffice packages to this job.
         run: python3 scripts/forward_test.py
 
       - name: Check install.sh syntax
@@ -28,3 +31,25 @@ jobs:
 
       - name: Check for whitespace errors
         run: git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+
+  install-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run install.sh into a temp HOME
+        run: |
+          export HOME="$RUNNER_TEMP/fakehome"
+          mkdir -p "$HOME/.codex/skills/csv"
+          echo "occupied" > "$HOME/.codex/skills/csv/keep.txt"
+          bash ./install.sh
+          test -d "$HOME/.codex/skills/csv"
+          test ! -L "$HOME/.codex/skills/csv"
+          test -L "$HOME/.codex/skills/docx"
+          test -L "$HOME/.grok/skills/csv"
+          test -L "$HOME/.claude/skills/ics"
+          test -L "$HOME/.cursor/skills/xlsx"

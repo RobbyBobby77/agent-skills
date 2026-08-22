@@ -39,6 +39,8 @@ description: >
 | Fill forms | see [references/forms.md](references/forms.md); pixel→point via `scripts/coords.py` |
 | Low-level repair | `qpdf` |
 
+Run `python scripts/…` from this skill's directory.
+
 ```bash
 pip install pypdf pdfplumber reportlab pdf2image pytesseract
 # system: poppler-utils, qpdf, tesseract-ocr

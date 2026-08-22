@@ -176,6 +176,8 @@ prefer native PowerPoint automation when available and report the platform depen
 
 ### Content
 
+Run `python scripts/…` from this skill's directory.
+
 ```bash
 python scripts/qa_text.py output.pptx
 python -m markitdown output.pptx | grep -iE 'lorem|ipsum|xxxx|placeholder|this (page|slide)|TODO|TBD'
@@ -210,7 +212,7 @@ Hunt for:
 ## Dependencies
 
 ```bash
-npm install -g pptxgenjs
+npm install pptxgenjs
 pip install "markitdown[pptx]" python-pptx Pillow
 # system: libreoffice, poppler-utils
 ```

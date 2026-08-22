@@ -87,7 +87,7 @@ Editing a digitally signed workbook invalidates the signature; flag this before 
 
 ```python
 from openpyxl import Workbook
-from openpyxl.styles import Font, Fill, PatternFill, Alignment, Border, Side, NamedStyle
+from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.chart import BarChart, Reference
@@ -236,6 +236,8 @@ More patterns: [references/formulas.md](references/formulas.md), [references/for
 ### LibreOffice recalculation (optional headless)
 
 `xlsx → xlsx` often keeps stale cached values (a `SUM` stays `0`). Round-trip through Calc's native format:
+
+Run `python scripts/…` from this skill's directory.
 
 ```bash
 python scripts/soffice.py --convert-to ods --outdir tmp output.xlsx

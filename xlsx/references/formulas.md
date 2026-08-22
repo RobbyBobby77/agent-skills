@@ -36,8 +36,8 @@ If you convert a range to a Table (`Table` in openpyxl), use structured refs:
 
 ```
 // row 3 is first data row; column G is Amount, H is Balance
-H3 = =G3
-H4 = =H3+G4   // fill down
+H3: =G3
+H4: =H3+G4   // fill down
 ```
 
 ## Percentage of total

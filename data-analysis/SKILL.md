@@ -89,6 +89,8 @@ print(df.groupby(["user_id", "event_id"]).size().max(), "max dups on key")
 df["ts"] = pd.to_datetime(df["ts"], utc=True)
 df["revenue_cents"] = pd.to_numeric(df["revenue_cents"], errors="coerce")
 df["country"] = df["country"].astype("category")
+# pandas 2.x cannot to_period() on tz-aware stamps: tz_convert to the analysis
+# zone (or UTC), then tz_localize(None) before grouping by period
 ```
 
 ### Coverage checklist
@@ -105,10 +107,15 @@ print("rows/day", df.groupby(df["ts"].dt.date).size().describe())
 ## Groupbys that answer questions
 
 ```python
-# revenue by week (timezone-aware → local period if needed)
+# revenue by week (tz-aware → local naive period; pandas 2.x rejects tz-aware to_period)
 weekly = (
-    df.dropna(subset=["ts", "revenue_cents"])
-      .assign(week=lambda x: x["ts"].dt.to_period("W").dt.start_time)
+    df.dropna(subset=["ts", "revenue_cents"])  # completeness filter: require timestamp + amount
+      .assign(
+          week=lambda x: x["ts"].dt.tz_convert("America/Los_Angeles")
+                                .dt.tz_localize(None)
+                                .dt.to_period("W")
+                                .dt.start_time
+      )
       .groupby("week", as_index=False)["revenue_cents"].sum()
 )
 
@@ -127,8 +134,12 @@ conversion = funnel / funnel.iloc[0]
 ### Retention / cohort sketch
 
 ```python
-df["cohort"] = df.groupby("user_id")["ts"].transform("min").dt.to_period("M")
-df["month"] = df["ts"].dt.to_period("M")
+local_ts = df["ts"].dt.tz_convert("America/Los_Angeles").dt.tz_localize(None)
+df["cohort"] = (
+    df.groupby("user_id")["ts"].transform("min")
+      .dt.tz_convert("America/Los_Angeles").dt.tz_localize(None).dt.to_period("M")
+)
+df["month"] = local_ts.dt.to_period("M")
 counts = (
     df.groupby(["cohort", "month"])["user_id"]
       .nunique()

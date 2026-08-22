@@ -14,9 +14,11 @@ import argparse
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 FLATPAK_ID = "org.libreoffice.LibreOffice"
+CONVERT_TIMEOUT_S = 120
 
 
 def find_soffice(*visible: Path) -> list[str]:
@@ -32,8 +34,9 @@ def find_soffice(*visible: Path) -> list[str]:
             check=False,
         )
         if probe.returncode == 0:
-            # Flatpak --filesystem=host does not see tmpfs /tmp.
-            cmd = ["flatpak", "run", "--filesystem=host", "--filesystem=/tmp"]
+            # Grant only the paths this conversion needs (plus /tmp: host
+            # visibility does not include tmpfs). Avoid --filesystem=host.
+            cmd = ["flatpak", "run", "--filesystem=/tmp"]
             for path in visible:
                 cmd.append(f"--filesystem={path.resolve()}")
             cmd.append(FLATPAK_ID)
@@ -46,23 +49,33 @@ def find_soffice(*visible: Path) -> list[str]:
 
 def convert(src: Path, outdir: Path, fmt: str) -> Path:
     outdir.mkdir(parents=True, exist_ok=True)
-    cmd = find_soffice(src.parent, outdir) + [
-        "--headless",
-        "--norestore",
-        "--convert-to",
-        fmt,
-        "--outdir",
-        str(outdir),
-        str(src),
-    ]
-    proc = subprocess.run(cmd, check=False, capture_output=True, text=True)
-    if proc.returncode != 0:
-        sys.stderr.write(proc.stdout + proc.stderr)
-        raise SystemExit(proc.returncode)
-    produced = outdir / (src.stem + "." + fmt.split(":", 1)[0])
-    if not produced.is_file():
-        raise SystemExit(f"conversion produced no file: {produced}")
-    return produced
+    with tempfile.TemporaryDirectory(prefix="soffice-profile-") as profile:
+        profile_path = Path(profile).resolve()
+        cmd = find_soffice(src.parent, outdir, profile_path) + [
+            "--headless",
+            "--norestore",
+            "--nologo",
+            "--nolockcheck",
+            f"-env:UserInstallation={profile_path.as_uri()}",
+            "--convert-to",
+            fmt,
+            "--outdir",
+            str(outdir),
+            str(src),
+        ]
+        try:
+            proc = subprocess.run(
+                cmd, check=False, capture_output=True, text=True, timeout=CONVERT_TIMEOUT_S
+            )
+        except subprocess.TimeoutExpired:
+            raise SystemExit(f"LibreOffice timed out after {CONVERT_TIMEOUT_S}s")
+        if proc.returncode != 0:
+            sys.stderr.write(proc.stdout + proc.stderr)
+            raise SystemExit(proc.returncode)
+        produced = outdir / (src.stem + "." + fmt.split(":", 1)[0])
+        if not produced.is_file():
+            raise SystemExit(f"conversion produced no file: {produced}")
+        return produced
 
 
 def main() -> int:

@@ -10,6 +10,7 @@ more honest than pulling in pyyaml for two fields.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import sys
 from pathlib import Path
@@ -88,6 +89,18 @@ def check_local_links(skill_dir: Path, body: str, errors: list[str], label: str)
             errors.append(f"{label}: linked file does not resolve: {target}")
 
 
+def check_soffice_copies(errors: list[str]) -> None:
+    copies = sorted(ROOT.glob("*/scripts/soffice.py"))
+    if len(copies) != 4:
+        errors.append(f"expected 4 soffice.py copies, found {len(copies)}")
+        return
+    digests = [(p.relative_to(ROOT).as_posix(), hashlib.sha256(p.read_bytes()).hexdigest()) for p in copies]
+    unique = {digest for _, digest in digests}
+    if len(unique) != 1:
+        listing = ", ".join(f"{path}={digest[:12]}" for path, digest in digests)
+        errors.append(f"soffice.py copies are not identical: {listing}")
+
+
 def validate_skill(skill_dir: Path, errors: list[str]) -> None:
     label = skill_dir.name
     skill_md = skill_dir / "SKILL.md"
@@ -130,6 +143,7 @@ def main() -> int:
         return 1
 
     errors: list[str] = []
+    check_soffice_copies(errors)
     for skill_dir in skill_dirs:
         validate_skill(skill_dir, errors)
 

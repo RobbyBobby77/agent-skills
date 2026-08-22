@@ -65,10 +65,13 @@ doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
 Use nested tables for side-by-side content (Platypus has no real CSS grid):
 
 ```python
+from reportlab.platypus import KeepInFrame, Table
+
 left = [Paragraph("<b>Left</b>", styles["Body"]), Paragraph("...", styles["Body"])]
 right = [Paragraph("<b>Right</b>", styles["Body"]), Paragraph("...", styles["Body"])]
-# build inner flows into tables or use KeepInFrame
-pair = Table([[left_content, right_content]], colWidths=[3.25*inch, 3.25*inch])
+left_content = KeepInFrame(3.25 * inch, 4 * inch, left)
+right_content = KeepInFrame(3.25 * inch, 4 * inch, right)
+pair = Table([[left_content, right_content]], colWidths=[3.25 * inch, 3.25 * inch])
 ```
 
 ## Page breaks & keep-together

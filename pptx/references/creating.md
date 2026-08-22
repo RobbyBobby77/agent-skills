@@ -135,8 +135,11 @@ async function iconPng(Icon, color = "#38BDF8", size = 256) {
   return "data:image/png;base64," + buf.toString("base64");
 }
 
-const icon = await iconPng(FaRocket);
-slide.addImage({ data: icon, x: 0.6, y: 1.3, w: 0.45, h: 0.45 });
+async function addIcon(slide) {
+  const icon = await iconPng(FaRocket);
+  slide.addImage({ data: icon, x: 0.6, y: 1.3, w: 0.45, h: 0.45 });
+}
+addIcon(slide);
 ```
 
 Rasterize at ≥256px; display size is controlled by `w`/`h` in inches.
