@@ -49,10 +49,17 @@ move detailed recipes, schemas, and variant-specific guidance into directly link
 - [ ] Existing files and user changes are preserved by default.
 - [ ] Commands avoid secrets, brittle substitutions, and unnecessary interactivity.
 - [ ] Examples are syntactically valid and tested when dependency-sensitive.
-- [ ] `python scripts/forward_test.py` passes after changes to helpers or high-risk skills.
+- [ ] `python scripts/validate_skills.py` and `python scripts/forward_test.py` pass after changes to helpers or high-risk skills.
 - [ ] Local Markdown references resolve.
 - [ ] `agents/openai.yaml` still matches the skill's intent.
 - [ ] `bash -n install.sh` and `git diff --check` pass.
+
+`install.sh` is POSIX-portable bash 3.2 (macOS `/bin/bash`): no `mapfile`, GNU
+`find -printf`, or `readlink -f`. It skips real directories and any existing
+symlink that does not already point at this checkout, so a bundled Grok skill
+of the same name is not clobbered. `scripts/validate_skills.py` hash-compares
+the four `soffice.py` copies and greps skill markdown for known-bad example
+tokens.
 
 ## Pull requests
 

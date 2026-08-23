@@ -307,6 +307,13 @@ def test_ics() -> None:
         except SystemExit:
             refused_rrule = True
         check("ics.stdlib.refuse_rrule", refused_rrule)
+        std_args.rrule = ""
+        std_args.summary = "A" * 120
+        folded = mod.write_stdlib(std_args, start, end)
+        phys_ok = all(len(ln) <= 75 for ln in folded.split(b"\r\n") if ln)
+        check("ics.stdlib.fold_75", phys_ok, folded.split(b"\r\n")[:8])
+        unfolded = folded.replace(b"\r\n ", b"")
+        check("ics.stdlib.fold_unfolds", b"SUMMARY:" + b"A" * 120 in unfolded, unfolded[:200])
 
 
 def test_yaml_norway() -> None:

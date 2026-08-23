@@ -107,7 +107,7 @@ cal.add_component(ev)
 open("meeting.ics", "wb").write(cal.to_ical())
 ```
 
-The library folds lines at 75 octets, uses `CRLF`, and escapes `DESCRIPTION`. Do not re-fold by hand.
+The library folds lines at 75 octets, uses `CRLF`, and escapes `DESCRIPTION`. The stdlib fallback in `write_event.py` also folds at 75 octets and escapes TEXT. Do not re-fold by hand.
 
 ### All-day
 

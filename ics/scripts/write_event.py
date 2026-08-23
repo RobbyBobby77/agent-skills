@@ -73,6 +73,44 @@ def escape_text(value: str) -> str:
     )
 
 
+def _utf8_prefix(data: bytes, max_octets: int) -> int:
+    """Largest valid-UTF-8 prefix of data that is at most max_octets long."""
+    if len(data) <= max_octets:
+        return len(data)
+    cut = max_octets
+    while cut > 0 and data[cut] & 0xC0 == 0x80:
+        cut -= 1
+    if cut == 0:
+        cut = 1
+        while cut < len(data) and data[cut] & 0xC0 == 0x80:
+            cut += 1
+    return cut
+
+
+def fold_line(line: str, limit: int = 75) -> list[str]:
+    """RFC 5545 §3.1: physical lines at most `limit` octets, continuations start with SPACE."""
+    remaining = line.encode("utf-8")
+    if len(remaining) <= limit:
+        return [line]
+    physical: list[str] = []
+    first = True
+    while remaining:
+        budget = limit if first else limit - 1  # continuation lines include a leading SPACE
+        cut = _utf8_prefix(remaining, budget)
+        chunk, remaining = remaining[:cut], remaining[cut:]
+        text = chunk.decode("utf-8")
+        physical.append(text if first else " " + text)
+        first = False
+    return physical
+
+
+def fold_ics(lines: list[str], limit: int = 75) -> bytes:
+    physical: list[str] = []
+    for line in lines:
+        physical.extend(fold_line(line, limit=limit))
+    return "\r\n".join(physical).encode("utf-8")
+
+
 def write_stdlib(args, start, end) -> bytes:
     if args.rrule:
         raise SystemExit("recurrence requires the icalendar package")
@@ -106,7 +144,7 @@ def write_stdlib(args, start, end) -> bytes:
         "END:VCALENDAR",
         "",
     ]
-    return "\r\n".join(lines).encode("utf-8")
+    return fold_ics(lines)
 
 
 def parse_back(raw: bytes) -> None:
