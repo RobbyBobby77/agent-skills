@@ -56,3 +56,29 @@ jobs:
           test -L "$HOME/.grok/skills/csv"
           test -L "$HOME/.claude/skills/ics"
           test -L "$HOME/.cursor/skills/xlsx"
+
+  # Optional office path. LibreOffice + poppler are large and occasionally fail on
+  # hosted runners; keep validate / install-macos green even if this job is red.
+  office:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install LibreOffice and poppler
+        id: pkgs
+        run: |
+          if sudo apt-get update && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libreoffice-core poppler-utils; then
+            echo "installed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "installed=false" >> "$GITHUB_OUTPUT"
+            echo "office packages unavailable; skipping LibreOffice forward-test"
+          fi
+
+      - name: Forward-test with LibreOffice
+        if: steps.pkgs.outputs.installed == 'true'
+        run: python3 scripts/forward_test.py
