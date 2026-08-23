@@ -3,13 +3,14 @@
 
 Behavioral helper checks live in scripts/forward_test.py.
 
-No third-party dependencies: frontmatter here is deliberately restricted to
-two scalar/folded-block keys (name, description), so a small hand parser is
-more honest than pulling in pyyaml for two fields.
+No third-party dependencies: frontmatter is restricted to two scalar/folded-block
+keys (name, description), and agents/openai.yaml is a key presence check — PyYAML
+is not in the stdlib. Python fences are compiled with ast.parse when small.
 """
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import re
 import sys
@@ -21,6 +22,9 @@ KEBAB_CASE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 LINK_PATTERN = re.compile(r"\]\(([^)]+)\)")
 CODE_SPAN = re.compile(r"`[^`\n]*`")
 FENCED_BLOCK = re.compile(r"```.*?```", re.S)
+PYTHON_FENCE = re.compile(r"```(?:python|py)\r?\n(.*?)```", re.S)
+# Skip huge fences; compiling those is not worth the validator time.
+MAX_PYTHON_FENCE_BYTES = 8192
 # Tokens that previously shipped as copy-pasteable landmines. Keep them out of
 # skill markdown so the original bugs cannot silently return.
 KNOWN_BAD_TOKENS = (
@@ -106,6 +110,22 @@ def check_known_bad_tokens(errors: list[str]) -> None:
                 errors.append(f"{rel}: contains known-bad token {token!r}")
 
 
+def check_python_fences(errors: list[str]) -> None:
+    paths = sorted(ROOT.glob("*/SKILL.md")) + sorted(ROOT.glob("*/references/*.md"))
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        rel = path.relative_to(ROOT).as_posix()
+        for index, block in enumerate(PYTHON_FENCE.findall(text), 1):
+            if len(block.encode("utf-8")) > MAX_PYTHON_FENCE_BYTES:
+                continue
+            try:
+                ast.parse(block)
+            except SyntaxError as exc:
+                errors.append(
+                    f"{rel}: python fence {index} does not compile: {exc.msg} (line {exc.lineno})"
+                )
+
+
 def check_soffice_copies(errors: list[str]) -> None:
     copies = sorted(ROOT.glob("*/scripts/soffice.py"))
     if len(copies) != 4:
@@ -162,6 +182,7 @@ def main() -> int:
     errors: list[str] = []
     check_soffice_copies(errors)
     check_known_bad_tokens(errors)
+    check_python_fences(errors)
     for skill_dir in skill_dirs:
         validate_skill(skill_dir, errors)
 

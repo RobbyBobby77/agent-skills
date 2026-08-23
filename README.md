@@ -12,6 +12,7 @@
   <img alt="Curated collection" src="https://img.shields.io/badge/status-curated-D49A32?style=flat-square">
   <img alt="Portable" src="https://img.shields.io/badge/agents-portable-56697C?style=flat-square">
   <img alt="MIT licensed" src="https://img.shields.io/badge/license-MIT-2F6B45?style=flat-square">
+  <img alt="CI" src="https://github.com/RobbyBobby77/agent-skills/actions/workflows/ci.yml/badge.svg">
 </p>
 
 Agent Skills turns general-purpose coding agents into more dependable specialists. Each skill combines
@@ -42,18 +43,22 @@ cd agent-skills
 bash ./install.sh
 ```
 
-The installer discovers every folder containing `SKILL.md` and creates symlinks. It skips a real
-directory or an existing symlink that does not already point at this checkout (so a Grok bundled
-skill of the same name is not clobbered) and verifies matching Codex links.
+`install.sh` requires `python3` on `PATH` (it uses stdlib `os.path.realpath` to resolve
+paths). It discovers every folder containing `SKILL.md` and creates symlinks. An occupied
+destination — a real directory, or a symlink that does not already point at this checkout —
+is skipped, and the rest of the install continues. A bundled Codex or Grok skill of the same
+name is not replaced.
 
-| Agent | Install location |
+| Agent | Default location |
 |---|---|
 | Codex | `~/.codex/skills` |
 | Claude Code | `~/.claude/skills` |
 | Cursor | `~/.cursor/skills` |
 | Grok | `~/.grok/skills` |
 
-Reload the agent after installation if its skill catalog was already open.
+Set `CODEX_HOME` / `GROK_HOME` to change the Codex and Grok roots (`$CODEX_HOME/skills`,
+`$GROK_HOME/skills`). Reload the agent after installation if its skill catalog was already
+open.
 
 ## The collection
 
@@ -128,9 +133,11 @@ skills_root="/absolute/path/to/agent-skills"
 
 for skill_file in "$skills_root"/*/SKILL.md; do
   skill_name=$(basename "$(dirname "$skill_file")")
-  ln -sfn "$(dirname "$skill_file")" ".agents/skills/$skill_name"
+  ln -s "$(dirname "$skill_file")" ".agents/skills/$skill_name"
 done
 ```
+
+Use `ln -s` without `-f`. `-f` / `-sfn` would replace an existing dest.
 
 ## Optional toolchain
 

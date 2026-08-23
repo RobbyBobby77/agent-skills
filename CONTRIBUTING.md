@@ -58,11 +58,15 @@ move detailed recipes, schemas, and variant-specific guidance into directly link
 `find -printf`, or `readlink -f`. It skips real directories and any existing
 symlink that does not already point at this checkout, so a bundled Grok skill
 of the same name is not clobbered. `scripts/validate_skills.py` hash-compares
-the four `soffice.py` copies and greps skill markdown for known-bad example
-tokens.
+the four `soffice.py` copies, greps skill markdown for known-bad example
+tokens, and `ast.parse`s python fences (skipping oversized blocks). `agents/openai.yaml`
+is a key presence check, not a PyYAML parse — PyYAML is not in the stdlib.
 
 ## Pull requests
 
 Keep changes focused. Explain the behavior the skill improves, the failure mode it prevents, and how
 you validated the revision. For high-risk skills—Git, SQL, PDF forms, presentations, and macro-enabled
 workbooks—include a realistic forward-test scenario when possible.
+
+GitHub Actions pins use major tags (`actions/checkout@v4`, `actions/setup-python@v5`). Pinning
+each action to a full commit SHA is optional.
