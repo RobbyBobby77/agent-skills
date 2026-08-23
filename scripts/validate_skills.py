@@ -21,6 +21,13 @@ KEBAB_CASE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 LINK_PATTERN = re.compile(r"\]\(([^)]+)\)")
 CODE_SPAN = re.compile(r"`[^`\n]*`")
 FENCED_BLOCK = re.compile(r"```.*?```", re.S)
+# Tokens that previously shipped as copy-pasteable landmines. Keep them out of
+# skill markdown so the original bugs cannot silently return.
+KNOWN_BAD_TOKENS = (
+    "left_content",
+    "vitest run --repeat",
+    "pytest --count",
+)
 
 
 def strip_code(text: str) -> str:
@@ -89,6 +96,16 @@ def check_local_links(skill_dir: Path, body: str, errors: list[str], label: str)
             errors.append(f"{label}: linked file does not resolve: {target}")
 
 
+def check_known_bad_tokens(errors: list[str]) -> None:
+    paths = sorted(ROOT.glob("*/SKILL.md")) + sorted(ROOT.glob("*/references/*.md"))
+    for path in paths:
+        text = path.read_text(encoding="utf-8")
+        rel = path.relative_to(ROOT).as_posix()
+        for token in KNOWN_BAD_TOKENS:
+            if token in text:
+                errors.append(f"{rel}: contains known-bad token {token!r}")
+
+
 def check_soffice_copies(errors: list[str]) -> None:
     copies = sorted(ROOT.glob("*/scripts/soffice.py"))
     if len(copies) != 4:
@@ -144,6 +161,7 @@ def main() -> int:
 
     errors: list[str] = []
     check_soffice_copies(errors)
+    check_known_bad_tokens(errors)
     for skill_dir in skill_dirs:
         validate_skill(skill_dir, errors)
 

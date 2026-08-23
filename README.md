@@ -42,8 +42,9 @@ cd agent-skills
 bash ./install.sh
 ```
 
-The installer discovers every folder containing `SKILL.md`, creates symlinks, and verifies that Codex
-resolves all installed skills back to this checkout.
+The installer discovers every folder containing `SKILL.md` and creates symlinks. It skips a real
+directory or an existing symlink that does not already point at this checkout (so a Grok bundled
+skill of the same name is not clobbered) and verifies matching Codex links.
 
 | Agent | Install location |
 |---|---|
@@ -158,11 +159,20 @@ python -m pip install openpyxl xlsxwriter pandas polars pypdf pdfplumber \
 
 [MIT License](LICENSE) — free to use, copy, modify, and share with attribution of the license text.
 
+## Security
+
+See [SECURITY.md](SECURITY.md). Skills are instructions, not hosted services; helpers are local
+stdlib Python and do not phone home. Report vulnerabilities privately, not in public issues.
+
 ## Contributing
 
 Improvements are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before adding or revising a skill.
 The short version: keep triggers precise, instructions concise, destructive boundaries explicit, and
 examples verifiable.
+
+A dated [second reading](docs/skill-review.html) (13 August 2026) records an earlier editorial pass.
+Treat it as historical; the files, [CONTRIBUTING.md](CONTRIBUTING.md), and this README are the
+source of truth.
 
 ## Repository status
 

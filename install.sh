@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Symlink all skills into common agent skill directories.
 # Portable to bash 3.2 (macOS): no mapfile, find -printf, or readlink -f.
+# Never clobber a real directory or a symlink that points somewhere else
+# (Grok and other agents may already ship a skill with the same name).
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -50,12 +52,14 @@ link_into() {
         LINKED=$((LINKED + 1))
         continue
       fi
+      echo "  skip $s — existing symlink points elsewhere ($resolved); not clobbering" >&2
+      continue
     fi
-    if [ -e "$target" ] && [ ! -L "$target" ]; then
+    if [ -e "$target" ]; then
       echo "  skip $s — real path already exists (not overwriting)" >&2
       continue
     fi
-    ln -sfn "$SRC/$s" "$target"
+    ln -s "$SRC/$s" "$target"
     echo "  linked $s"
     LINKED=$((LINKED + 1))
   done

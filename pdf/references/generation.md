@@ -69,9 +69,9 @@ from reportlab.platypus import KeepInFrame, Table
 
 left = [Paragraph("<b>Left</b>", styles["Body"]), Paragraph("...", styles["Body"])]
 right = [Paragraph("<b>Right</b>", styles["Body"]), Paragraph("...", styles["Body"])]
-left_content = KeepInFrame(3.25 * inch, 4 * inch, left)
-right_content = KeepInFrame(3.25 * inch, 4 * inch, right)
-pair = Table([[left_content, right_content]], colWidths=[3.25 * inch, 3.25 * inch])
+left_frame = KeepInFrame(3.25 * inch, 4 * inch, left)
+right_frame = KeepInFrame(3.25 * inch, 4 * inch, right)
+pair = Table([[left_frame, right_frame]], colWidths=[3.25 * inch, 3.25 * inch])
 ```
 
 ## Page breaks & keep-together

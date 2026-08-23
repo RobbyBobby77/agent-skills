@@ -46,10 +46,13 @@ jobs:
           export HOME="$RUNNER_TEMP/fakehome"
           mkdir -p "$HOME/.codex/skills/csv"
           echo "occupied" > "$HOME/.codex/skills/csv/keep.txt"
+          mkdir -p "$HOME/.grok/skills" "$RUNNER_TEMP/other-docx"
+          ln -s "$RUNNER_TEMP/other-docx" "$HOME/.grok/skills/docx"
           bash ./install.sh
           test -d "$HOME/.codex/skills/csv"
           test ! -L "$HOME/.codex/skills/csv"
           test -L "$HOME/.codex/skills/docx"
+          test "$(readlink "$HOME/.grok/skills/docx")" = "$RUNNER_TEMP/other-docx"
           test -L "$HOME/.grok/skills/csv"
           test -L "$HOME/.claude/skills/ics"
           test -L "$HOME/.cursor/skills/xlsx"
