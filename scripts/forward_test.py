@@ -105,6 +105,62 @@ def test_csv_neutralize() -> None:
             sniffed_rows,
         )
 
+        # Line endings survive the round trip: csv.writer defaults to CRLF and
+        # would otherwise rewrite every terminator in an LF file.
+        for label, terminator in (("lf", b"\n"), ("crlf", b"\r\n")):
+            le_src = Path(tmp) / f"{label}.csv"
+            le_dst = Path(tmp) / f"{label}-out.csv"
+            le_src.write_bytes(terminator.join([b"id,note", b"1,=CMD()", b"2,ok", b""]))
+            try:
+                sys.argv = ["neutralize.py", "--in", str(le_src), "--out", str(le_dst)]
+                rc = mod.main()
+            finally:
+                sys.argv = old
+            out = le_dst.read_bytes()
+            check(
+                f"csv.neutralize.{label}_preserved",
+                rc == 0 and out.count(b"\r\n") == le_src.read_bytes().count(b"\r\n"),
+                repr(out),
+            )
+
+        # A sniffed delimiter that yields ragged rows is probably the wrong one:
+        # refuse rather than silently reshape every row.
+        ragged = Path(tmp) / "ragged.csv"
+        ragged_out = Path(tmp) / "ragged-out.csv"
+        ragged.write_text("a,b\n1,2,3\n", encoding="utf-8")
+        try:
+            sys.argv = ["neutralize.py", "--in", str(ragged), "--out", str(ragged_out)]
+            rc = mod.main()
+        finally:
+            sys.argv = old
+        check(
+            "csv.neutralize.ragged_sniffed_refuses",
+            rc == 2 and not ragged_out.exists(),
+            f"rc={rc} wrote={ragged_out.exists()}",
+        )
+
+        # An explicit delimiter is the caller's assertion: warn, but write.
+        try:
+            sys.argv = [
+                "neutralize.py", "--in", str(ragged), "--out", str(ragged_out),
+                "--delimiter", ",",
+            ]
+            rc = mod.main()
+        finally:
+            sys.argv = old
+        check("csv.neutralize.ragged_explicit_writes", rc == 0 and ragged_out.exists())
+
+        override_out = Path(tmp) / "ragged-override.csv"
+        try:
+            sys.argv = [
+                "neutralize.py", "--in", str(ragged), "--out", str(override_out),
+                "--allow-ragged",
+            ]
+            rc = mod.main()
+        finally:
+            sys.argv = old
+        check("csv.neutralize.ragged_override_writes", rc == 0 and override_out.exists())
+
 
 def test_pdf_coords() -> None:
     mod = load(ROOT / "pdf/scripts/coords.py", "pdf_coords")

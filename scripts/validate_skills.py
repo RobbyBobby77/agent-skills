@@ -91,12 +91,16 @@ def check_openai_yaml(skill_dir: Path, errors: list[str], label: str) -> None:
             errors.append(f"{label}: agents/openai.yaml is missing '{key}'")
 
 
-def check_local_links(skill_dir: Path, body: str, errors: list[str], label: str) -> None:
+def check_local_links(base_dir: Path, body: str, errors: list[str], label: str) -> None:
+    """Relative links resolve from the directory of the file that contains them."""
     for target in LINK_PATTERN.findall(strip_code(body)):
         target = target.split(" ", 1)[0].strip()
         if not target or target.startswith(("http://", "https://", "#", "mailto:")):
             continue
-        if not (skill_dir / target).is_file():
+        target = target.split("#", 1)[0]
+        if not target:
+            continue
+        if not (base_dir / target).is_file():
             errors.append(f"{label}: linked file does not resolve: {target}")
 
 
@@ -167,10 +171,16 @@ def validate_skill(skill_dir: Path, errors: list[str]) -> None:
     references_dir = skill_dir / "references"
     if references_dir.is_dir():
         linked = set(LINK_PATTERN.findall(strip_code(text)))
-        for ref_file in references_dir.glob("*.md"):
+        for ref_file in sorted(references_dir.glob("*.md")):
             rel = f"references/{ref_file.name}"
             if not any(rel in target for target in linked):
                 errors.append(f"{label}: references/{ref_file.name} exists but SKILL.md never links to it")
+            check_local_links(
+                references_dir,
+                ref_file.read_text(encoding="utf-8"),
+                errors,
+                f"{label}/{rel}",
+            )
 
 
 def main() -> int:

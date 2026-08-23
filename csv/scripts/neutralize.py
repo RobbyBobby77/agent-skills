@@ -5,6 +5,10 @@ Prefixes =, +, @, and non-numeric - with a single quote, including when those
 characters are preceded by tab, CR, LF, or space. Leaves real negative
 numbers alone.
 
+Preserves the source file's line terminator. When the delimiter was sniffed
+rather than given and the parse comes out ragged, refuses to write instead of
+silently reshaping every row.
+
 Usage:
   python scripts/neutralize.py --in dirty.csv --out safe.csv
   python scripts/neutralize.py --in dirty.csv --out safe.csv --encoding latin-1 --delimiter ';'
@@ -43,6 +47,24 @@ def detect_delimiter(sample: str, delimiter: str | None) -> str:
         return ","
 
 
+def detect_newline(raw: bytes) -> str:
+    """The source file's line terminator. CRLF only when it already uses CRLF."""
+    idx = raw.find(b"\n")
+    if idx == -1:
+        return "\r\n"  # single line, no terminator observed: RFC 4180 default
+    if idx == 0:
+        return "\n"
+    return "\r\n" if raw[idx - 1] == 0x0D else "\n"
+
+
+def ragged_rows(rows: list[list[str]]) -> list[int]:
+    """1-indexed rows whose field count differs from the header's. Blank lines ignored."""
+    if not rows:
+        return []
+    width = len(rows[0])
+    return [i for i, row in enumerate(rows, 1) if row and len(row) != width]
+
+
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--in", dest="src", required=True)
@@ -53,6 +75,11 @@ def main() -> int:
         default=None,
         help="Field delimiter; sniffed from the sample when omitted",
     )
+    p.add_argument(
+        "--allow-ragged",
+        action="store_true",
+        help="Write even when rows disagree on field count (the file really is ragged)",
+    )
     args = p.parse_args()
     src = Path(args.src)
     dst = Path(args.dst)
@@ -62,12 +89,32 @@ def main() -> int:
         encoding = "utf-8-sig"
     text = raw.decode(encoding)
     delimiter = detect_delimiter(text[:8192], args.delimiter)
+    newline = detect_newline(raw)
     rows = [
         [neutralize(cell) for cell in row]
         for row in csv.reader(io.StringIO(text), delimiter=delimiter)
     ]
+
+    ragged = ragged_rows(rows)
+    if ragged:
+        shown = ", ".join(str(n) for n in ragged[:5])
+        more = f" (+{len(ragged) - 5} more)" if len(ragged) > 5 else ""
+        print(
+            f"warning: {len(ragged)} row(s) disagree with the header's "
+            f"{len(rows[0])} field(s) under delimiter {delimiter!r}: rows {shown}{more}",
+            file=sys.stderr,
+        )
+        if args.delimiter is None and not args.allow_ragged:
+            print(
+                "refusing to write: the delimiter was sniffed, not given, so it is "
+                "probably wrong and writing would reshape every row. Re-run with "
+                "--delimiter, or --allow-ragged if the file really is ragged.",
+                file=sys.stderr,
+            )
+            return 2
+
     with dst.open("w", newline="", encoding=encoding) as f:
-        csv.writer(f, delimiter=delimiter).writerows(rows)
+        csv.writer(f, delimiter=delimiter, lineterminator=newline).writerows(rows)
     print("wrote", dst, "rows", len(rows))
     return 0
 

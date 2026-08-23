@@ -69,9 +69,13 @@ echo "Source: $SRC"
 echo "Skills (${#SKILLS[@]}): ${SKILLS[*]}"
 echo
 
+# Every root is guarded: an unwritable one is skipped, not fatal under `set -e`.
 CODEX_SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
-mkdir -p "$CODEX_SKILLS_DIR"
-link_into "$CODEX_SKILLS_DIR" "Codex"
+if mkdir -p "$CODEX_SKILLS_DIR" 2>/dev/null; then
+  link_into "$CODEX_SKILLS_DIR" "Codex"
+else
+  echo "skip Codex — cannot create $CODEX_SKILLS_DIR" >&2
+fi
 
 if mkdir -p "${GROK_HOME:-$HOME/.grok}/skills" 2>/dev/null; then
   link_into "${GROK_HOME:-$HOME/.grok}/skills" "Grok"
